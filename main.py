@@ -2,9 +2,10 @@ import discord
 from discord.ext import commands
 import json
 import os
+from datetime import datetime
 
 TOKEN = os.getenv("TOKEN")
-OWNER_ID = 1466843004458238166  # ТВОЙ ID
+OWNER_ID = 1466843004458238166
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -34,27 +35,41 @@ def get_emoji(guild):
     emoji = discord.utils.get(guild.emojis, name="brotherhoodcoin")
     return str(emoji) if emoji else "🪙"
 
-# ===== ID =====
-@bot.command()
-async def myid(ctx):
-    await ctx.send(f"🆔 Твой ID: `{ctx.author.id}`")
-
 # ===== BALANCE =====
 @bot.command()
 async def balance(ctx):
-    user_id = str(ctx.author.id)
+    user = ctx.author
+    user_id = str(user.id)
     amount = balances.get(user_id, 0)
     emoji = get_emoji(ctx.guild)
 
+    sorted_balances = sorted(balances.items(), key=lambda x: x[1], reverse=True)
+    position = next((i+1 for i, v in enumerate(sorted_balances) if v[0] == user_id), "—")
+
     embed = discord.Embed(
-        title="💰 Баланс",
-        description=f"У тебя **{amount}** {emoji}",
+        title="💰 Личный профиль и баланс",
         color=discord.Color.gold()
     )
 
+    embed.set_thumbnail(url=user.avatar.url if user.avatar else None)
+
+    embed.add_field(name="👤 Пользователь", value=user.mention, inline=False)
+    embed.add_field(name="🆔 ID", value=user.id, inline=True)
+    embed.add_field(name="📊 Баланс", value=f"{amount} {emoji}", inline=True)
+    embed.add_field(name="🏆 Место в топе", value=f"#{position}", inline=True)
+
+    if user.joined_at:
+        embed.add_field(
+            name="📅 На сервере с",
+            value=user.joined_at.strftime("%d.%m.%Y"),
+            inline=False
+        )
+
+    embed.set_footer(text="Экономическая система Brotherhood")
+
     await ctx.send(embed=embed)
 
-# ===== GIVE (простое начисление) =====
+# ===== GIVE =====
 @bot.command()
 async def give(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
@@ -69,13 +84,16 @@ async def give(ctx, member: discord.Member, amount: int):
 
     embed = discord.Embed(
         title="💸 Начисление средств",
-        description=f"{member.mention}, вам начислено **{amount}** {emoji}.",
+        description=(
+            f"{member.mention}, вам начислено **{amount}** {emoji}.\n\n"
+            f"💰 Просмотреть свой баланс вы можете командой `!balance`."
+        ),
         color=discord.Color.blue()
     )
 
     await ctx.send(embed=embed)
 
-# ===== ADD (карта одобрена) =====
+# ===== ADD =====
 @bot.command()
 async def add(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
@@ -89,12 +107,12 @@ async def add(ctx, member: discord.Member, amount: int):
     emoji = get_emoji(ctx.guild)
 
     embed = discord.Embed(
-        title="💳 Карта одобрена!",
+        title="🗺️ Карта одобрена!",
         description=(
             f"🎉 Поздравляем, {member.mention}!\n\n"
             f"Ваша заявка была успешно одобрена.\n"
             f"На ваш баланс зачислено **{amount}** {emoji}.\n\n"
-            f"💰 Проверить баланс: `!balance`"
+            f"💰 Просмотреть баланс можно командой `!balance`."
         ),
         color=discord.Color.green()
     )
@@ -140,10 +158,16 @@ async def top(ctx):
     emoji = get_emoji(ctx.guild)
     sorted_balances = sorted(balances.items(), key=lambda x: x[1], reverse=True)
 
-    description = ""
+    description = "🏆 **Рейтинг самых обеспеченных участников сервера:**\n\n"
+
+    medals = ["🥇", "🥈", "🥉"]
+
     for index, (user_id, amount) in enumerate(sorted_balances[:10], start=1):
         user = await bot.fetch_user(int(user_id))
-        description += f"**{index}.** {user.name} — `{amount}` {emoji}\n"
+        medal = medals[index-1] if index <= 3 else "🔹"
+        description += f"{medal} **{index}. {user.name}** — `{amount}` {emoji}\n"
+
+    description += "\n💰 Просмотреть свой баланс можно командой `!balance`."
 
     embed = discord.Embed(
         title="🏆 Топ богатейших",
@@ -154,4 +178,3 @@ async def top(ctx):
     await ctx.send(embed=embed)
 
 bot.run(TOKEN)
-        
