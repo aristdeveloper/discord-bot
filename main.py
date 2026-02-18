@@ -5,7 +5,7 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 
-OWNER_ID = 1473777685044924640  # ТВОЙ ID
+OWNER_ID = 1466843004458238166  # ТВОЙ НАСТОЯЩИЙ ID
 
 EMOJI = "<:brotherhoodcoin:1473782095884320804>"
 
@@ -16,14 +16,12 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 DATA_FILE = "balances.json"
 
-# Загрузка балансов
 def load_balances():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
             return json.load(f)
     return {}
 
-# Сохранение балансов
 def save_balances(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
@@ -34,19 +32,16 @@ balances = load_balances()
 async def on_ready():
     print(f"Бот запущен как {bot.user}")
 
-# Команда узнать свой ID
 @bot.command()
 async def myid(ctx):
     await ctx.send(f"Твой ID: `{ctx.author.id}`")
 
-# Баланс
 @bot.command()
 async def balance(ctx):
     user_id = str(ctx.author.id)
     amount = balances.get(user_id, 0)
     await ctx.send(f"💰 Ваш баланс: {amount} {EMOJI}")
 
-# Начисление (только владелец)
 @bot.command()
 async def add(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
