@@ -4,11 +4,11 @@ import json
 import os
 
 TOKEN = os.getenv("TOKEN")
-OWNER_ID = 1466843004458238166
+OWNER_ID = 1466843004458238166  # ТВОЙ ID
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True  # важно для top
+intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -34,10 +34,12 @@ def get_emoji(guild):
     emoji = discord.utils.get(guild.emojis, name="brotherhoodcoin")
     return str(emoji) if emoji else "🪙"
 
+# ===== ID =====
 @bot.command()
 async def myid(ctx):
     await ctx.send(f"🆔 Твой ID: `{ctx.author.id}`")
 
+# ===== BALANCE =====
 @bot.command()
 async def balance(ctx):
     user_id = str(ctx.author.id)
@@ -52,6 +54,28 @@ async def balance(ctx):
 
     await ctx.send(embed=embed)
 
+# ===== GIVE (простое начисление) =====
+@bot.command()
+async def give(ctx, member: discord.Member, amount: int):
+    if ctx.author.id != OWNER_ID:
+        await ctx.send("❌ Ты не владелец бота.")
+        return
+
+    user_id = str(member.id)
+    balances[user_id] = balances.get(user_id, 0) + amount
+    save_balances(balances)
+
+    emoji = get_emoji(ctx.guild)
+
+    embed = discord.Embed(
+        title="💸 Начисление средств",
+        description=f"{member.mention}, вам начислено **{amount}** {emoji}.",
+        color=discord.Color.blue()
+    )
+
+    await ctx.send(embed=embed)
+
+# ===== ADD (карта одобрена) =====
 @bot.command()
 async def add(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
@@ -65,13 +89,21 @@ async def add(ctx, member: discord.Member, amount: int):
     emoji = get_emoji(ctx.guild)
 
     embed = discord.Embed(
-        title="✅ Начисление",
-        description=f"{member.mention} получил **{amount}** {emoji}",
+        title="💳 Карта одобрена!",
+        description=(
+            f"🎉 Поздравляем, {member.mention}!\n\n"
+            f"Ваша заявка была успешно одобрена.\n"
+            f"На ваш баланс зачислено **{amount}** {emoji}.\n\n"
+            f"💰 Проверить баланс: `!balance`"
+        ),
         color=discord.Color.green()
     )
 
+    embed.set_footer(text="Финансовая система Brotherhood")
+
     await ctx.send(embed=embed)
 
+# ===== REMOVE =====
 @bot.command()
 async def remove(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
@@ -92,12 +124,13 @@ async def remove(ctx, member: discord.Member, amount: int):
 
     embed = discord.Embed(
         title="➖ Списание",
-        description=f"У {member.mention} списано **{amount}** {emoji}",
+        description=f"У {member.mention} списано **{amount}** {emoji}.",
         color=discord.Color.red()
     )
 
     await ctx.send(embed=embed)
 
+# ===== TOP =====
 @bot.command()
 async def top(ctx):
     if not balances:
@@ -105,7 +138,6 @@ async def top(ctx):
         return
 
     emoji = get_emoji(ctx.guild)
-
     sorted_balances = sorted(balances.items(), key=lambda x: x[1], reverse=True)
 
     description = ""
@@ -122,3 +154,4 @@ async def top(ctx):
     await ctx.send(embed=embed)
 
 bot.run(TOKEN)
+        
