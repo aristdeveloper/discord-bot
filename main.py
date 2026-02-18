@@ -43,6 +43,71 @@ async def on_ready():
     await tree.sync()
     print(f"Бот запущен как {bot.user}")
 
+# ================= INFO =================
+@tree.command(name="info", description="Информация о командах бота")
+async def info(interaction: discord.Interaction):
+
+    embed = discord.Embed(
+        title="📖 Информация о системе Brotherhood",
+        description="Ниже указаны все доступные команды и их назначение.",
+        color=discord.Color.blurple()
+    )
+
+    embed.add_field(
+        name="📝 /register",
+        value="Регистрация в системе.\n"
+              "Используется игроками для создания профиля и привязки ника из Brofist.io.\n"
+              "Без регистрации пользоваться экономикой нельзя.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔄 /rename",
+        value="Смена игрового ника.\n"
+              "Доступно только зарегистрированным пользователям.\n"
+              "Нельзя выбрать уже занятый ник.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="💰 /balance",
+        value="Показывает ваш профиль и баланс валюты.\n"
+              "Доступно только зарегистрированным игрокам.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🏆 /top",
+        value="Отображает топ самых богатых игроков сервера.\n"
+              "Доступно зарегистрированным пользователям.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="💸 /give",
+        value="Начисление валюты игроку.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🗺️ /add",
+        value="Начисление валюты с текстом 'карта одобрена'.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="➖ /remove",
+        value="Списание валюты у игрока.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.set_footer(text="Экономическая система Brotherhood • Brofist.io")
+
+    await interaction.response.send_message(embed=embed)
+
 # ================= REGISTER =================
 @tree.command(name="register", description="Зарегистрироваться в системе")
 @app_commands.describe(nickname="Ваш ник в Brofist.io")
@@ -152,10 +217,7 @@ async def give(interaction: discord.Interaction, member: discord.Member, amount:
 
     embed = discord.Embed(
         title="💸 Начисление средств",
-        description=(
-            f"Игрок **{nickname}** получил **{amount}** {emoji}.\n\n"
-            f"💰 Проверить баланс можно командой `/balance`."
-        ),
+        description=f"Игрок **{nickname}** получил **{amount}** {emoji}.\n\n💰 Проверить баланс можно командой `/balance`.",
         color=discord.Color.blue()
     )
 
@@ -183,12 +245,7 @@ async def add(interaction: discord.Interaction, member: discord.Member, amount: 
 
     embed = discord.Embed(
         title="🗺️ Карта одобрена!",
-        description=(
-            f"🎉 Поздравляем, **{nickname}**!\n\n"
-            f"Ваша карта была успешно одобрена.\n"
-            f"На баланс зачислено **{amount}** {emoji}.\n\n"
-            f"💰 Просмотреть баланс можно командой `/balance`."
-        ),
+        description=f"🎉 Поздравляем, **{nickname}**!\n\nВаша карта была успешно одобрена.\nНа баланс зачислено **{amount}** {emoji}.\n\n💰 Просмотреть баланс можно командой `/balance`.",
         color=discord.Color.green()
     )
 
@@ -258,4 +315,3 @@ async def top(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 bot.run(TOKEN)
-    
