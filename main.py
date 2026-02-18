@@ -5,68 +5,58 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 
-OWNER_ID = 1473777685044924640  # твой ID
+OWNER_ID = 1473777685044924640  # ТВОЙ ID
 
-COIN_EMOJI = "<:brotherhoodcoin:1473782095884320804>"
+EMOJI = "<:brotherhoodcoin:1473782095884320804>"
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.members = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# создаём файл если его нет
-if not os.path.exists("balance.json"):
-    with open("balance.json", "w") as f:
-        json.dump({}, f)
+DATA_FILE = "balances.json"
 
-def load_balance():
-    with open("balance.json", "r") as f:
-        return json.load(f)
+# Загрузка балансов
+def load_balances():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as f:
+            return json.load(f)
+    return {}
 
-def save_balance(data):
-    with open("balance.json", "w") as f:
-        json.dump(data, f, indent=4)
+# Сохранение балансов
+def save_balances(data):
+    with open(DATA_FILE, "w") as f:
+        json.dump(data, f)
+
+balances = load_balances()
 
 @bot.event
 async def on_ready():
     print(f"Бот запущен как {bot.user}")
 
+# Команда узнать свой ID
+@bot.command()
+async def myid(ctx):
+    await ctx.send(f"Твой ID: `{ctx.author.id}`")
+
+# Баланс
+@bot.command()
+async def balance(ctx):
+    user_id = str(ctx.author.id)
+    amount = balances.get(user_id, 0)
+    await ctx.send(f"💰 Ваш баланс: {amount} {EMOJI}")
+
+# Начисление (только владелец)
 @bot.command()
 async def add(ctx, member: discord.Member, amount: int):
     if ctx.author.id != OWNER_ID:
-        await ctx.send("❌ У тебя нет прав для начисления коинов.")
+        await ctx.send("❌ Ты не владелец бота.")
         return
 
-    if amount <= 0:
-        await ctx.send("❌ Количество должно быть больше 0.")
-        return
-
-    data = load_balance()
     user_id = str(member.id)
+    balances[user_id] = balances.get(user_id, 0) + amount
+    save_balances(balances)
 
-    if user_id not in data:
-        data[user_id] = 0
-
-    data[user_id] += amount
-    save_balance(data)
-
-    await ctx.send(
-        f"🎉 Поздравляю, ваша карта была принята!\n"
-        f"На ваш баланс начислено {amount} {COIN_EMOJI}\n"
-        f"💰 Текущий баланс: {data[user_id]} {COIN_EMOJI}"
-    )
-
-@bot.command()
-async def balance(ctx):
-    data = load_balance()
-    user_id = str(ctx.author.id)
-
-    if user_id not in data:
-        data[user_id] = 0
-
-    await ctx.send(
-        f"💰 Ваш баланс: {data[user_id]} {COIN_EMOJI}"
-    )
+    await ctx.send(f"✅ {member.mention} получил {amount} {EMOJI}")
 
 bot.run(TOKEN)
