@@ -5,7 +5,6 @@ import os
 
 TOKEN = os.getenv("TOKEN")
 OWNER_ID = 1466843004458238166
-GUILD_ID = 1473782095884320804  # твой сервер
 
 intents = discord.Intents.default()
 intents.members = True
@@ -41,9 +40,7 @@ def get_emoji(guild):
 # ===== Синхронизация =====
 @bot.event
 async def on_ready():
-    guild = discord.Object(id=GUILD_ID)
-    await tree.sync()  # глобальные
-    await tree.sync(guild=guild)  # guild-only
+    await tree.sync()
     print(f"Бот запущен как {bot.user}")
 
 # ================= INFO =================
@@ -63,7 +60,7 @@ async def info(interaction: discord.Interaction):
     embed.add_field(name="💸 /give", value="(Owner) Начислить валюту.", inline=False)
     embed.add_field(name="🗺️ /add", value="(Owner) Начислить валюту (карта).", inline=False)
     embed.add_field(name="➖ /remove", value="(Owner) Списать валюту.", inline=False)
-    embed.add_field(name="🛠️ /changenickname", value="(Owner) Изменить ник игрока.", inline=False)
+    embed.add_field(name="🛠️ /changenickname", value="(Owner) Изменить ник любому игроку.", inline=False)
 
     await interaction.response.send_message(embed=embed)
 
@@ -113,17 +110,13 @@ async def rename(interaction: discord.Interaction, new_nickname: str):
         f"🔄 Ник изменён: **{old}** ➜ **{new_nickname}**"
     )
 
-# ================= CHANGE NICKNAME (OWNER ONLY, GUILD ONLY) =================
-@tree.command(
-    name="changenickname",
-    description="(Owner) Изменить ник игрока",
-    guild=discord.Object(id=GUILD_ID)
-)
+# ================= CHANGE NICKNAME (OWNER ONLY) =================
+@tree.command(name="changenickname", description="(Owner) Изменить ник игрока")
 @app_commands.describe(member="Кому изменить ник", new_nickname="Новый ник")
 async def changenickname(interaction: discord.Interaction, member: discord.Member, new_nickname: str):
 
     if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ Эта команда только для владельца.", ephemeral=True)
+        await interaction.response.send_message("❌ Эта команда доступна только владельцу.", ephemeral=True)
         return
 
     if not is_registered(member.id):
@@ -159,7 +152,7 @@ async def balance(interaction: discord.Interaction):
     nickname = nicknames[user_id]
     emoji = get_emoji(interaction.guild)
 
-    embed = discord.Embed(title="💰 Профиль игрока", color=discord.Color.gold())
+    embed = discord.Embed(title="💰 Профиль", color=discord.Color.gold())
     embed.add_field(name="🎮 Ник", value=nickname, inline=False)
     embed.add_field(name="💎 Баланс", value=f"{amount} {emoji}", inline=False)
 
@@ -253,4 +246,3 @@ async def top(interaction: discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 bot.run(TOKEN)
-        
