@@ -49,23 +49,67 @@ async def info(interaction: discord.Interaction):
 
     embed = discord.Embed(
         title="📖 Информация о системе Brotherhood",
-        description="Ниже указаны все доступные команды.",
+        description="Ниже указаны все доступные команды и их назначение.",
         color=discord.Color.blurple()
     )
 
-    embed.add_field(name="📝 /register", value="Регистрация в системе.", inline=False)
-    embed.add_field(name="🔄 /rename", value="Смена своего ника.", inline=False)
-    embed.add_field(name="💰 /balance", value="Посмотреть баланс.", inline=False)
-    embed.add_field(name="🏆 /top", value="Топ богатейших игроков.", inline=False)
-    embed.add_field(name="💸 /give", value="(Owner) Начислить валюту.", inline=False)
-    embed.add_field(name="🗺️ /add", value="(Owner) Начислить валюту (карта).", inline=False)
-    embed.add_field(name="➖ /remove", value="(Owner) Списать валюту.", inline=False)
-    embed.add_field(name="🛠️ /changenickname", value="(Owner) Изменить ник любому игроку.", inline=False)
+    embed.add_field(
+        name="📝 /register",
+        value="Регистрация в системе.\n"
+              "Используется игроками для создания профиля и привязки ника из Brofist.io.\n"
+              "Без регистрации пользоваться экономикой нельзя.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔄 /rename",
+        value="Смена игрового ника.\n"
+              "Доступно только зарегистрированным пользователям.\n"
+              "Нельзя выбрать уже занятый ник.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="💰 /balance",
+        value="Показывает ваш профиль и баланс валюты.\n"
+              "Доступно только зарегистрированным игрокам.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🏆 /top",
+        value="Отображает топ самых богатых игроков сервера.\n"
+              "Доступно зарегистрированным пользователям.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="💸 /give",
+        value="Начисление валюты игроку.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="🗺️ /add",
+        value="Начисление валюты с текстом 'карта одобрена'.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.add_field(
+        name="➖ /remove",
+        value="Списание валюты у игрока.\n"
+              "⚠ Доступно только владельцу бота.",
+        inline=False
+    )
+
+    embed.set_footer(text="Экономическая система Brotherhood • Brofist.io")
 
     await interaction.response.send_message(embed=embed)
 
 # ================= REGISTER =================
-@tree.command(name="register", description="Зарегистрироваться")
+@tree.command(name="register", description="Зарегистрироваться в системе")
 @app_commands.describe(nickname="Ваш ник в Brofist.io")
 async def register(interaction: discord.Interaction, nickname: str):
 
@@ -83,13 +127,17 @@ async def register(interaction: discord.Interaction, nickname: str):
     balances[user_id] = 0
     save_data()
 
-    await interaction.response.send_message(
-        f"✅ Вы зарегистрированы под ником **{nickname}**."
+    embed = discord.Embed(
+        title="✅ Регистрация успешна!",
+        description=f"Вы зарегистрированы под ником **{nickname}**.",
+        color=discord.Color.green()
     )
 
+    await interaction.response.send_message(embed=embed)
+
 # ================= RENAME =================
-@tree.command(name="rename", description="Изменить свой ник")
-@app_commands.describe(new_nickname="Новый ник")
+@tree.command(name="rename", description="Изменить игровой ник")
+@app_commands.describe(new_nickname="Новый никнейм")
 async def rename(interaction: discord.Interaction, new_nickname: str):
 
     user_id = str(interaction.user.id)
@@ -106,37 +154,13 @@ async def rename(interaction: discord.Interaction, new_nickname: str):
     nicknames[user_id] = new_nickname
     save_data()
 
-    await interaction.response.send_message(
-        f"🔄 Ник изменён: **{old}** ➜ **{new_nickname}**"
+    embed = discord.Embed(
+        title="🔄 Ник изменён",
+        description=f"**{old}** ➜ **{new_nickname}**",
+        color=discord.Color.blue()
     )
 
-# ================= CHANGE NICKNAME (OWNER ONLY) =================
-@tree.command(name="changenickname", description="(Owner) Изменить ник игрока")
-@app_commands.describe(member="Кому изменить ник", new_nickname="Новый ник")
-async def changenickname(interaction: discord.Interaction, member: discord.Member, new_nickname: str):
-
-    if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ Эта команда доступна только владельцу.", ephemeral=True)
-        return
-
-    if not is_registered(member.id):
-        await interaction.response.send_message("❌ Пользователь не зарегистрирован.", ephemeral=True)
-        return
-
-    if new_nickname.lower() in [n.lower() for n in nicknames.values()]:
-        await interaction.response.send_message("❌ Этот ник уже занят.", ephemeral=True)
-        return
-
-    user_id = str(member.id)
-    old_nick = nicknames[user_id]
-    nicknames[user_id] = new_nickname
-    save_data()
-
-    await interaction.response.send_message(
-        f"🛠️ Ник пользователя {member.mention} изменён:\n"
-        f"**{old_nick}** ➜ **{new_nickname}**",
-        ephemeral=True
-    )
+    await interaction.response.send_message(embed=embed)
 
 # ================= BALANCE =================
 @tree.command(name="balance", description="Посмотреть баланс")
@@ -149,100 +173,145 @@ async def balance(interaction: discord.Interaction):
         return
 
     amount = balances.get(user_id, 0)
-    nickname = nicknames[user_id]
     emoji = get_emoji(interaction.guild)
+    nickname = nicknames[user_id]
 
-    embed = discord.Embed(title="💰 Профиль", color=discord.Color.gold())
+    sorted_balances = sorted(balances.items(), key=lambda x: x[1], reverse=True)
+    position = next((i+1 for i, v in enumerate(sorted_balances) if v[0] == user_id), "—")
+
+    embed = discord.Embed(
+        title="💰 Профиль игрока",
+        color=discord.Color.gold()
+    )
+
+    embed.set_thumbnail(url=interaction.user.display_avatar.url)
+
     embed.add_field(name="🎮 Ник", value=nickname, inline=False)
-    embed.add_field(name="💎 Баланс", value=f"{amount} {emoji}", inline=False)
+    embed.add_field(name="💎 Баланс", value=f"{amount} {emoji}", inline=True)
+    embed.add_field(name="🏆 Место в топе", value=f"#{position}", inline=True)
+    embed.add_field(name="🆔 Discord ID", value=interaction.user.id, inline=False)
+
+    embed.set_footer(text="Экономическая система Brotherhood")
 
     await interaction.response.send_message(embed=embed)
 
 # ================= GIVE =================
-@tree.command(name="give", description="(Owner) Начислить валюту")
+@tree.command(name="give", description="Начислить валюту")
 @app_commands.describe(member="Кому", amount="Сколько")
 async def give(interaction: discord.Interaction, member: discord.Member, amount: int):
 
     if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ Только владелец.", ephemeral=True)
+        await interaction.response.send_message("❌ Ты не владелец.", ephemeral=True)
         return
 
     if not is_registered(member.id):
         await interaction.response.send_message("❌ Пользователь не зарегистрирован.", ephemeral=True)
         return
 
-    balances[str(member.id)] += amount
+    user_id = str(member.id)
+    balances[user_id] += amount
     save_data()
 
-    await interaction.response.send_message(
-        f"💸 {member.mention} получил {amount} {get_emoji(interaction.guild)}"
-    )
-
-# ================= ADD =================
-@tree.command(name="add", description="(Owner) Карта одобрена")
-@app_commands.describe(member="Кому", amount="Сколько")
-async def add(interaction: discord.Interaction, member: discord.Member, amount: int):
-
-    if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ Только владелец.", ephemeral=True)
-        return
-
-    if not is_registered(member.id):
-        await interaction.response.send_message("❌ Пользователь не зарегистрирован.", ephemeral=True)
-        return
-
-    balances[str(member.id)] += amount
-    save_data()
+    emoji = get_emoji(interaction.guild)
+    nickname = nicknames[user_id]
 
     embed = discord.Embed(
-        title="🗺️ Карта одобрена!",
-        description=f"{member.mention} получил **{amount}** {get_emoji(interaction.guild)}",
-        color=discord.Color.green()
+        title="💸 Начисление средств",
+        description=f"Игрок **{nickname}** получил **{amount}** {emoji}.\n\n💰 Проверить баланс можно командой `/balance`.",
+        color=discord.Color.blue()
     )
 
     await interaction.response.send_message(embed=embed)
 
-# ================= REMOVE =================
-@tree.command(name="remove", description="(Owner) Списать валюту")
-@app_commands.describe(member="У кого", amount="Сколько")
-async def remove(interaction: discord.Interaction, member: discord.Member, amount: int):
+# ================= ADD =================
+@tree.command(name="add", description="Начислить валюту (карта одобрена)")
+@app_commands.describe(member="Кому", amount="Сколько")
+async def add(interaction: discord.Interaction, member: discord.Member, amount: int):
 
     if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ Только владелец.", ephemeral=True)
+        await interaction.response.send_message("❌ Ты не владелец.", ephemeral=True)
         return
 
     if not is_registered(member.id):
         await interaction.response.send_message("❌ Пользователь не зарегистрирован.", ephemeral=True)
         return
 
-    if balances[str(member.id)] < amount:
+    user_id = str(member.id)
+    balances[user_id] += amount
+    save_data()
+
+    emoji = get_emoji(interaction.guild)
+    nickname = nicknames[user_id]
+
+    embed = discord.Embed(
+        title="🗺️ Карта одобрена!",
+        description=f"🎉 Поздравляем, **{nickname}**!\n\nВаша карта была успешно одобрена.\nНа баланс зачислено **{amount}** {emoji}.\n\n💰 Просмотреть баланс можно командой `/balance`.",
+        color=discord.Color.green()
+    )
+
+    embed.set_thumbnail(url=member.display_avatar.url)
+
+    await interaction.response.send_message(embed=embed)
+
+# ================= REMOVE =================
+@tree.command(name="remove", description="Списать валюту")
+@app_commands.describe(member="У кого", amount="Сколько")
+async def remove(interaction: discord.Interaction, member: discord.Member, amount: int):
+
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("❌ Ты не владелец.", ephemeral=True)
+        return
+
+    if not is_registered(member.id):
+        await interaction.response.send_message("❌ Пользователь не зарегистрирован.", ephemeral=True)
+        return
+
+    user_id = str(member.id)
+
+    if balances[user_id] < amount:
         await interaction.response.send_message("⚠ Недостаточно средств.", ephemeral=True)
         return
 
-    balances[str(member.id)] -= amount
+    balances[user_id] -= amount
     save_data()
 
-    await interaction.response.send_message(
-        f"➖ У {member.mention} списано {amount} {get_emoji(interaction.guild)}"
+    emoji = get_emoji(interaction.guild)
+
+    embed = discord.Embed(
+        title="➖ Списание",
+        description=f"С пользователя {member.mention} списано **{amount}** {emoji}.",
+        color=discord.Color.red()
     )
 
+    await interaction.response.send_message(embed=embed)
+
 # ================= TOP =================
-@tree.command(name="top", description="Топ игроков")
+@tree.command(name="top", description="Топ богатейших игроков")
 async def top(interaction: discord.Interaction):
 
     if not balances:
-        await interaction.response.send_message("📉 Нет данных.")
+        await interaction.response.send_message("📉 Пока нет данных.")
         return
 
     emoji = get_emoji(interaction.guild)
     sorted_balances = sorted(balances.items(), key=lambda x: x[1], reverse=True)
 
-    text = ""
-    for i, (user_id, amount) in enumerate(sorted_balances[:10], start=1):
-        nickname = nicknames.get(user_id, "Unknown")
-        text += f"{i}. {nickname} — {amount} {emoji}\n"
+    description = "🏆 **Рейтинг самых богатых игроков:**\n\n"
+    medals = ["🥇", "🥈", "🥉"]
 
-    embed = discord.Embed(title="🏆 Топ игроков", description=text, color=discord.Color.purple())
+    for index, (user_id, amount) in enumerate(sorted_balances[:10], start=1):
+        nickname = nicknames.get(user_id, "Unknown")
+        medal = medals[index-1] if index <= 3 else "🔹"
+        description += f"{medal} **{index}. {nickname}** — `{amount}` {emoji}\n"
+
+    description += "\n💰 Просмотреть баланс можно командой `/balance`."
+
+    embed = discord.Embed(
+        title="🏆 Топ игроков",
+        description=description,
+        color=discord.Color.purple()
+    )
+
     await interaction.response.send_message(embed=embed)
 
 bot.run(TOKEN)
